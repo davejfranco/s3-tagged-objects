@@ -1,26 +1,6 @@
 import os
-import sys
 import boto3
-import logging
 
-"""
-Event Sample
-{   'version': '0', 
-    'id': 'bfe9e309-1f50-814d-606d-fbfb82501118', 
-    'detail-type': 'Object Tags Added', 
-    'source': 'aws.s3', 
-    'account': '784170130350', 
-    'time': '2022-02-14T15:20:13Z', 
-    'region': 'eu-west-1', 
-    'resources': ['arn:aws:s3:::sample-s3-bucket'], 
-    'detail': {'version': '0', 'bucket': {'name': 'sample-s3-bucket'}, 
-    'object': {'key': 'Screen Shot 2022-01-14 at 12.08.04.png', 
-    'etag': 'ce450ae73fde2f47ab2918d6f4cdf4a8', 
-    'version-id': 'BYFNeaVHpiW1P5WLRm5CJgwEplzBk_PU'}, 
-    'request-id': '5GS3JWQA2D8ZZRP5', 
-    'requester': '784170130350', 
-    'source-ip-address': '213.30.242.220'}}
-"""
 
 AWS_PROFILE = "playground"
 SRC_BUCKET = "sample-s3-bucket"
@@ -30,16 +10,12 @@ TAGS = {
     "LifeCycle":"Delete",
 }
 
-# logging
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-
 #client
-session = boto3.Session(profile_name=AWS_PROFILE)
-s3 = session.client('s3')
+#session = boto3.Session(profile_name=AWS_PROFILE)
+s3 = boto3.client('s3') #session.client('s3')
 
 
-def has_tags(bucket: str, obj_key: str, tags: dict[str, str]) -> bool:
+def has_tags(bucket, obj_key, tags):
     """
     Check if object keys has all the specified tags
     """
@@ -49,7 +25,7 @@ def has_tags(bucket: str, obj_key: str, tags: dict[str, str]) -> bool:
             Key=obj_key
         )
     except Exception as err:
-       logger.exception('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(obj_key, bucket))
+       print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(obj_key, bucket))
        raise err
     """
     {'ResponseMetadata': 
@@ -77,25 +53,31 @@ def has_tags(bucket: str, obj_key: str, tags: dict[str, str]) -> bool:
     return True            
 
 
-def move_object(src_bucket: str, target_bucket: str, obj_key: str) -> None:
-
+def move_object(src_bucket, target_bucket, key):
+    """
+    This function will copy in the given object to the specified target
+    S3 bucket and remove it from the source bucket afterwards
+    """
     try:
         s3.copy_object(
             Bucket=target_bucket,
-            CopySource=src_bucket,
-            Key=obj_key
+            CopySource={
+                'Bucket': src_bucket, 
+                'Key': key
+            },
+            Key=key
         )
     except Exception as err:
-        logger.exception('Error copying object {} from bucket {} to bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(obj_key, src_bucket, target_bucket))
+        print('Error copying object {} from bucket {} to bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, src_bucket, target_bucket))
         raise err
     
     try:
         s3.delete_object(
             Bucket=src_bucket,
-            Key=obj_key
+            Key=key
         )
     except Exception as err:
-        logger.exception('Error delete object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(obj_key, src_bucket))
+        print('Error delete object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, src_bucket))
         raise err
     return
 
@@ -104,8 +86,28 @@ def lambda_handler(event, context):
     Main entrypoint
     """
     
-    return {
-        'statusCode': 200
-    }
+    """
+    Event Sample
+    {'version': '0', 
+    'id': 'b202a966-0de5-0665-2fb8-7673fc47a11c', 
+    'detail-type': 'Object Tags Added', 
+    'source': 'aws.s3', 
+    'account': '784170130350', 
+    'time': '2022-02-15T14:07:50Z', 
+    'region': 'eu-west-1', 
+    'resources': ['arn:aws:s3:::dops-62-doc-shredding'], 
+    'detail': {'version': '0', 'bucket': {'name': 'dops-62-doc-shredding'}, 'object': {'key': 'image (6).png', 'etag': 'be947f5ff18f443c4738bc6cc1486c46', 'version-id': '6CWUqeRnhKoOUEBsV2EyTs1LjStR8v0F'}, 
+    'request-id': 'HJV2PJDVYHP7A0SQ', 
+    'requester': '784170130350', 
+    'source-ip-address': '213.32.243.220'}}
 
-print(has_tags(SRC_BUCKET, "Screen Shot 2022-01-14 at 12.08.04.png", TAGS))
+    """
+    # source bucket and key will produce the copy object required for the copy_object method
+    src_bucket = event['detail']['bucket']['name']
+    key = event['detail']['object']['key']
+
+    if has_tags(src_bucket, key, TAGS):
+        move_object(src_bucket, os.environ['TARGET_BUCKET'], key)
+        print("Object {} moved from bucket: {} to bucket: {}".format(key, src_bucket, os.environ['TARGET_BUCKET']))
+
+    
