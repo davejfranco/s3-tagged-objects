@@ -1,0 +1,27 @@
+name: deploy
+on:
+  push: # Runs on every push to main branch
+    branches:
+      - master
+    tags:
+      - "*.*.*"
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
+      - name: zip function
+        run: |
+          zip deploy.zip lambda_function.py
+      
+      - name: deploy lambda
+        uses: appleboy/lambda-action@7ef3dc1495565506e257e9950b6168191c5213c0 #v0.15
+        with:
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_region: ${{ secrets.AWS_REGION }}
+          function_name: ${{ secrets.FUNCTION_NAME }}
+          zip_file: deploy.zip
+          publish: true
