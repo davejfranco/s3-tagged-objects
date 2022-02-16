@@ -2,9 +2,6 @@ import os
 import boto3
 
 
-AWS_PROFILE = "playground"
-SRC_BUCKET = "sample-s3-bucket"
-
 #tags to find
 TAGS = {
     "LifeCycle":"Delete",
