@@ -1,4 +1,5 @@
 import boto3
+from typing import Dict
 from botocore.exceptions import ClientError
 
 
@@ -11,7 +12,7 @@ TAGS = {
 s3 = boto3.client('s3')
 
 
-def has_tags(bucket: str, obj_key: str, tags: dict[str, str]) -> bool:
+def has_tags(bucket: str, obj_key: str, tags: Dict[str, str]) -> bool:
     """
     Check if object keys has all the specified tags
     """
