@@ -23,7 +23,7 @@ def has_tags(bucket, obj_key, tags):
         )
     except Exception as err:
        print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(obj_key, bucket))
-       raise err
+       
     """
     {'ResponseMetadata': 
         {'RequestId': 'GFP8QPPFXQZNAS5V', 
