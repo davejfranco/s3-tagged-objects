@@ -2,9 +2,10 @@ name: deploy
 on:
   push: # Runs on every push to main branch
     branches:
-      - master
-    tags:
-      - "*.*.*"
+      - release/prod_byevent
+      - release/prod_bys3batch
+      - release/stage_byevent
+      - release/stage_bys3batch
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -12,16 +13,55 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       
-      - name: zip function
+      - name: Determine lambda to deploy
         run: |
-          zip deploy.zip lambda_function.py
+          case "${{ github.ref }}" in
+            refs/heads/release/stage_byevent)
+              FUNCTION_NAME="${{secrets.BYEVENT_FUNCTION_NAME}}"
+              AWS_ACCESS_KEY_ID="${{ secrets.DEV_AWS_ACCESS_KEY_ID }}"
+              AWS_SECRET_ACCESS_KEY="${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}"
+              ;;
+            refs/heads/stage_bys3batch)
+              FUNCTION_NAME="${{secrets.BYS3BATCH_FUNCTION_NAME}}"
+              AWS_ACCESS_KEY_ID="${{ secrets.PROD_AWS_ACCESS_KEY_ID }}"
+              AWS_SECRET_ACCESS_KEY="${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}"
+              ;;
+            refs/heads/release/prod_byevent)
+              FUNCTION_NAME="${{secrets.BYEVENT_FUNCTION_NAME}}"
+              AWS_ACCESS_KEY_ID="${{ secrets.DEV_AWS_ACCESS_KEY_ID }}"
+              AWS_SECRET_ACCESS_KEY="${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}"
+              AWS_K8S_IAM_ROLE="${{ secrets.DEV_AWS_K8S_IAM_ROLE }}"
+              ;;
+            refs/heads/prod_bys3batch)
+              FUNCTION_NAME="${{secrets.BYS3BATCH_FUNCTION_NAME}}"
+              AWS_ACCESS_KEY_ID="${{ secrets.PROD_AWS_ACCESS_KEY_ID }}"
+              AWS_SECRET_ACCESS_KEY="${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}"
+              ;;
+            esac
+            
+            # FUNCTION_NAME
+            echo "FUNCTION_NAME" >> $GITHUB_ENV
+            # AWS_ variables contain credentials for authenticating with AWS prior to deploying.
+            echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" >> $GITHUB_ENV
+            echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> $GITHUB_ENV
+            echo "AWS_K8S_IAM_ROLE=$AWS_K8S_IAM_ROLE" >> $GITHUB_ENV
+
+      - name: zip function
+        if: contains(github.ref, 'byevent')
+        run: |
+          zip deploy.zip s3mv.py triggered_by_event.py
+      
+      - name: zip function
+        if: contains(github.ref, 'bys3batch')
+        run: |
+          zip deploy.zip s3mv.py triggered_by_s3batch.py
       
       - name: deploy lambda
         uses: appleboy/lambda-action@7ef3dc1495565506e257e9950b6168191c5213c0 #v0.15
         with:
-          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_access_key_id: '${{ env.AWS_ACCESS_KEY_ID }}'
+          aws_secret_access_key: '${{ env.AWS_SECRET_ACCESS_KEY }}'
           aws_region: ${{ secrets.AWS_REGION }}
-          function_name: ${{ secrets.FUNCTION_NAME }}
+          function_name: '${{ env.FUNCTION_NAME }}'
           zip_file: deploy.zip
           publish: true
