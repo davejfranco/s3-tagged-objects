@@ -4,8 +4,8 @@ on:
     branches:
       - release/prod_byevent
       - release/prod_bys3batch
-      - release/stage_byevent
-      - release/stage_bys3batch
+      - release/staging_byevent
+      - release/staging_bybatch
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -16,26 +16,29 @@ jobs:
       - name: Determine lambda to deploy
         run: |
           case "${{ github.ref }}" in
-            refs/heads/release/stage_byevent)
+            refs/heads/release/staging_byevent)
               FUNCTION_NAME="${{secrets.BYEVENT_FUNCTION_NAME}}"
-              AWS_ACCESS_KEY_ID="${{ secrets.DEV_AWS_ACCESS_KEY_ID }}"
-              AWS_SECRET_ACCESS_KEY="${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}"
+              AWS_ACCESS_KEY_ID="${{ secrets.STG_AWS_ACCESS_KEY_ID }}"
+              AWS_SECRET_ACCESS_KEY="${{ secrets.STG_AWS_SECRET_ACCESS_KEY }}"
+              AWS_IAM_ROLE="${{secrets.STG_AWS_IAM_ROLE}}"
               ;;
-            refs/heads/stage_bys3batch)
-              FUNCTION_NAME="${{secrets.BYS3BATCH_FUNCTION_NAME}}"
+            refs/heads/staging_bybatch)
+              FUNCTION_NAME="${{secrets.BYBATCH_FUNCTION_NAME}}"
               AWS_ACCESS_KEY_ID="${{ secrets.PROD_AWS_ACCESS_KEY_ID }}"
               AWS_SECRET_ACCESS_KEY="${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}"
+              AWS_IAM_ROLE="${{secrets.STG_AWS_IAM_ROLE}}"
               ;;
             refs/heads/release/prod_byevent)
               FUNCTION_NAME="${{secrets.BYEVENT_FUNCTION_NAME}}"
-              AWS_ACCESS_KEY_ID="${{ secrets.DEV_AWS_ACCESS_KEY_ID }}"
-              AWS_SECRET_ACCESS_KEY="${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}"
-              AWS_K8S_IAM_ROLE="${{ secrets.DEV_AWS_K8S_IAM_ROLE }}"
+              AWS_ACCESS_KEY_ID="${{ secrets.STG_AWS_ACCESS_KEY_ID }}"
+              AWS_SECRET_ACCESS_KEY="${{ secrets.STG_AWS_SECRET_ACCESS_KEY }}"
+              AWS_IAM_ROLE="${{secrets.PROD_AWS_IAM_ROLE}}"
               ;;
-            refs/heads/prod_bys3batch)
+            refs/heads/prod_bybatch)
               FUNCTION_NAME="${{secrets.BYS3BATCH_FUNCTION_NAME}}"
               AWS_ACCESS_KEY_ID="${{ secrets.PROD_AWS_ACCESS_KEY_ID }}"
               AWS_SECRET_ACCESS_KEY="${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}"
+              AWS_IAM_ROLE="${{secrets.PROD_AWS_IAM_ROLE}}"
               ;;
             esac
             
@@ -44,7 +47,7 @@ jobs:
             # AWS_ variables contain credentials for authenticating with AWS prior to deploying.
             echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" >> $GITHUB_ENV
             echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> $GITHUB_ENV
-            echo "AWS_K8S_IAM_ROLE=$AWS_K8S_IAM_ROLE" >> $GITHUB_ENV
+            echo "AWS_IAM_ROLE=$AWS_IAM_ROLE" >> $GITHUB_ENV
 
       - name: zip function
         if: contains(github.ref, 'byevent')
@@ -52,16 +55,23 @@ jobs:
           zip deploy.zip s3mv.py triggered_by_event.py
       
       - name: zip function
-        if: contains(github.ref, 'bys3batch')
+        if: contains(github.ref, 'bybatch')
         run: |
           zip deploy.zip s3mv.py triggered_by_s3batch.py
+
       
-      - name: deploy lambda
-        uses: appleboy/lambda-action@7ef3dc1495565506e257e9950b6168191c5213c0 #v0.15
+      - name: Login to the AWS Dev environment
+        uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws_access_key_id: '${{ env.AWS_ACCESS_KEY_ID }}'
-          aws_secret_access_key: '${{ env.AWS_SECRET_ACCESS_KEY }}'
-          aws_region: ${{ secrets.AWS_REGION }}
-          function_name: '${{ env.FUNCTION_NAME }}'
-          zip_file: deploy.zip
-          publish: true
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ env.AWS_IAM_ROLE }}
+          role-duration-seconds: 1200
+          role-session-name: GHA-${{ github.sha }}
+          aws-region: eu-west-1
+      
+      - name: update function ${{ env.FUNCTION_NAME }}
+        run: |
+          aws lambda update-function-code \
+            --function-name  ${{ env.FUNCTION_NAME }} \
+            --zip-file fileb://deploy.zip
