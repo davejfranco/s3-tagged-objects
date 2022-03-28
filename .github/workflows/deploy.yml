@@ -49,18 +49,18 @@ jobs:
             echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> $GITHUB_ENV
             echo "AWS_IAM_ROLE=$AWS_IAM_ROLE" >> $GITHUB_ENV
 
-      - name: zip function
+      - name: zip function by event trigger
         if: contains(github.ref, 'byevent')
         run: |
           cd lambda && zip deploy.zip s3mv.py triggered_by_event.py
       
-      - name: zip function
+      - name: zip function by s3 batch trigger
         if: contains(github.ref, 'bybatch')
         run: |
           cd lambda && zip deploy.zip s3mv.py triggered_by_s3batch.py
 
       
-      - name: Login to the AWS Dev environment
+      - name: Login to the AWS environment
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
@@ -70,7 +70,7 @@ jobs:
           role-session-name: GHA-${{ github.sha }}
           aws-region: eu-west-1
       
-      - name: update function ${{ env.FUNCTION_NAME }}
+      - name: Update function
         run: |
           aws lambda update-function-code \
             --function-name  ${{ env.FUNCTION_NAME }} \
