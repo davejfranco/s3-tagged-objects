@@ -1,5 +1,10 @@
 import os
 import s3mv
+import logging
+
+#logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 def lambda_handler(event, context):
     """
@@ -23,11 +28,13 @@ def lambda_handler(event, context):
 
     """
     # source bucket and key will produce the copy object required for the copy_object method
+    event_id = event['id']
     src_bucket = event['detail']['bucket']['name']
     key = event['detail']['object']['key']
 
     if s3mv.has_tags(src_bucket, key, s3mv.TAGS):
         s3mv.move_object(src_bucket, os.environ['TARGET_BUCKET'], key)
-        print("Object {} moved from bucket: {} to bucket: {}".format(key, src_bucket, os.environ['TARGET_BUCKET']))
-
+        #log moved object
+        logger.info('Successfully moved object: {} from bucket: {} to bucket: {}'.format(key, src_bucket, os.environ['TARGET_BUCKET']))
+    return
     
