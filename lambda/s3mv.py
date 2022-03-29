@@ -1,7 +1,11 @@
 import boto3
+import logging
 from typing import Dict
 from botocore.exceptions import ClientError
 
+#logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 #tags to find
 TAGS = {
@@ -67,9 +71,9 @@ def move_object(src_bucket: str, target_bucket: str, key: str) -> None:
                 'Key': key
             },
             Key=key
-        )
+        )  
     except Exception as err:
-        print('Error copying object {} from bucket {} to bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, src_bucket, target_bucket))
+        logger.exception('Error copying object {} from bucket {} to bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, src_bucket, target_bucket))
         raise err
     
     try:
@@ -78,6 +82,6 @@ def move_object(src_bucket: str, target_bucket: str, key: str) -> None:
             Key=key
         )
     except Exception as err:
-        print('Object {} copied from bucket {} but not deleted.'.format(key, src_bucket))
+        logger.exception('Object {} copied from bucket {} but not deleted.'.format(key, src_bucket))
         raise err
     return
