@@ -2,9 +2,7 @@ name: deploy
 on:
   push: # Runs on every push to main branch
     branches:
-      - release/prod_byevent
       - release/prod_bys3batch
-      - release/staging_byevent
       - release/staging_bybatch
 jobs:
   deploy:
