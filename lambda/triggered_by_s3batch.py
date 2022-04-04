@@ -1,6 +1,11 @@
 import os
 import s3mv
+import logging
 from urllib import parse
+
+#logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 def lambda_handler(event, context):
     """
@@ -45,15 +50,18 @@ def lambda_handler(event, context):
             result_code = 'Succeeded'
             result_string = f"Successfully moved object " \
                                     f"{obj_key} from bucket {bucket}."
+            logging.info("{}: {}".format(result_code, result_string))
         except Exception as err:
             result_code = "PermanentFailure"
             result_string = f"Unable to move object " \
                                     f"{obj_key} from bucket {bucket}."
+            logging.exception("{}: {}, with exception".format(result_code, result_string, err))
             raise
     else: 
         result_code = 'TemporaryFailure'
         result_string = f"object {obj_key} from bucket {bucket}" \
                                     f"does not contain the searched tag."
+        logging.error("{}: {}".format(result_code, result_string))
 
     results.append({
         'taskId': task_id,
