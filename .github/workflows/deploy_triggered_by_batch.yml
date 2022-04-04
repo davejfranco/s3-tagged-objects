@@ -3,7 +3,7 @@ on:
   push: # Runs on every push to main branch
     branches:
       - release/prod_bys3batch
-      - release/staging_bybatch
+      - release/stage_bys3batch
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -14,7 +14,7 @@ jobs:
       - name: Determine lambda to deploy
         run: |
           case "${{ github.ref }}" in
-            refs/heads/staging_bybatch)
+            refs/heads/stage_bys3batch)
               FUNCTION_NAME="${{secrets.BYBATCH_FUNCTION_NAME}}"
               AWS_ACCESS_KEY_ID="${{ secrets.PROD_AWS_ACCESS_KEY_ID }}"
               AWS_SECRET_ACCESS_KEY="${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}"
@@ -36,7 +36,7 @@ jobs:
             echo "AWS_IAM_ROLE=$AWS_IAM_ROLE" >> $GITHUB_ENV
       
       - name: zip function by s3 batch trigger
-        if: contains(github.ref, 'bybatch')
+        if: contains(github.ref, 'bys3batch')
         run: |
           cd lambda && zip deploy.zip s3mv.py triggered_by_s3batch.py
     
