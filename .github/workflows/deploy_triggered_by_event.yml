@@ -36,7 +36,6 @@ jobs:
             echo "AWS_IAM_ROLE=$AWS_IAM_ROLE" >> $GITHUB_ENV
 
       - name: zip function by event trigger
-        if: contains(github.ref, 'byevent')
         run: |
           cd lambda && zip deploy.zip s3mv.py triggered_by_event.py
          
