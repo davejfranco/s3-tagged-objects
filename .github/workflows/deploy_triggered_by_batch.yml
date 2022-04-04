@@ -14,23 +14,11 @@ jobs:
       - name: Determine lambda to deploy
         run: |
           case "${{ github.ref }}" in
-            refs/heads/release/staging_byevent)
-              FUNCTION_NAME="${{secrets.BYEVENT_FUNCTION_NAME}}"
-              AWS_ACCESS_KEY_ID="${{ secrets.STG_AWS_ACCESS_KEY_ID }}"
-              AWS_SECRET_ACCESS_KEY="${{ secrets.STG_AWS_SECRET_ACCESS_KEY }}"
-              AWS_IAM_ROLE="${{ secrets.STG_AWS_IAM_ROLE }}"
-              ;;
             refs/heads/staging_bybatch)
               FUNCTION_NAME="${{secrets.BYBATCH_FUNCTION_NAME}}"
               AWS_ACCESS_KEY_ID="${{ secrets.PROD_AWS_ACCESS_KEY_ID }}"
               AWS_SECRET_ACCESS_KEY="${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}"
               AWS_IAM_ROLE="${{secrets.STG_AWS_IAM_ROLE}}"
-              ;;
-            refs/heads/release/prod_byevent)
-              FUNCTION_NAME="${{secrets.BYEVENT_FUNCTION_NAME}}"
-              AWS_ACCESS_KEY_ID="${{ secrets.STG_AWS_ACCESS_KEY_ID }}"
-              AWS_SECRET_ACCESS_KEY="${{ secrets.STG_AWS_SECRET_ACCESS_KEY }}"
-              AWS_IAM_ROLE="${{secrets.PROD_AWS_IAM_ROLE}}"
               ;;
             refs/heads/prod_bybatch)
               FUNCTION_NAME="${{secrets.BYS3BATCH_FUNCTION_NAME}}"
@@ -46,18 +34,12 @@ jobs:
             echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" >> $GITHUB_ENV
             echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> $GITHUB_ENV
             echo "AWS_IAM_ROLE=$AWS_IAM_ROLE" >> $GITHUB_ENV
-
-      - name: zip function by event trigger
-        if: contains(github.ref, 'byevent')
-        run: |
-          cd lambda && zip deploy.zip s3mv.py triggered_by_event.py
       
       - name: zip function by s3 batch trigger
         if: contains(github.ref, 'bybatch')
         run: |
           cd lambda && zip deploy.zip s3mv.py triggered_by_s3batch.py
-
-      
+    
       - name: Login to the AWS environment
         uses: aws-actions/configure-aws-credentials@v1
         with:
