@@ -3,7 +3,7 @@ import s3mv
 import logging
 
 #logging
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 def lambda_handler(event, context):
