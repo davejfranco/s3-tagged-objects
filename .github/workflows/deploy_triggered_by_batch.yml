@@ -1,4 +1,4 @@
-name: deploy
+name: deploy s3 batch ops triggered lambda
 on:
   push: # Runs on every push to main branch
     branches:
