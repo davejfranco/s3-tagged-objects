@@ -3,7 +3,7 @@ on:
   push: # Runs on every push to main branch
     branches:
       - release/prod_bys3batch
-      - release/stage_bys3batch
+      - release/staging_bys3batch
 
 permissions:
   id-token: write
@@ -19,7 +19,7 @@ jobs:
       - name: Determine lambda to deploy
         run: |
           case "${{ github.ref }}" in
-            refs/heads/stage_bys3batch)
+            refs/heads/staging_bys3batch)
               FUNCTION_NAME="${{secrets.BYBATCH_FUNCTION_NAME}}"
               AWS_ACCESS_KEY_ID="${{ secrets.STG_AWS_ACCESS_KEY_ID }}"
               AWS_SECRET_ACCESS_KEY="${{ secrets.STG_AWS_SECRET_ACCESS_KEY }}"
