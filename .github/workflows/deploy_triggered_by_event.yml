@@ -1,4 +1,4 @@
-name: deploy event trigerred lambda
+name: deploy event triggered lambda
 on:
   push: # Runs on every push to main branch
     branches:
