@@ -26,10 +26,10 @@ def has_tags(bucket: str, obj_key: str, tags: Dict[str, str]) -> bool:
             Key=obj_key
         )
     except ClientError as err:
-        print('Error getting object {} from bucket {}.'.format(obj_key, bucket))
+        logger.info('Error getting object {} from bucket {}.'.format(obj_key, bucket))
         raise err
     except Exception as err:
-       print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(obj_key, bucket))
+       logger.info('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(obj_key, bucket))
        return False
        
     """
