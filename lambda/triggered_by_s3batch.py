@@ -58,7 +58,7 @@ def lambda_handler(event, context):
             logger.exception("{}: {}, with exception".format(result_code, result_string, err))
             raise
     else: 
-        result_code = 'TemporaryFailure'
+        result_code = 'Succeeded' #this is expected if tags does not match no problem.
         result_string = f"object {obj_key} from bucket {bucket}" \
                                     f"does not contain the searched tag."
         logger.error("{}: {}".format(result_code, result_string))
