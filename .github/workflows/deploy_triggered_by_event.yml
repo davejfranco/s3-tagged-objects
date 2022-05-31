@@ -53,4 +53,4 @@ jobs:
         run: |
           aws lambda update-function-code \
             --function-name  ${{ env.FUNCTION_NAME }} \
-            --zip-file fileb://lambda/deploy.zip
+            --zip-file fileb://lambda/doc-shredding.zip

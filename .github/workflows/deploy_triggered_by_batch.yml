@@ -43,7 +43,7 @@ jobs:
       - name: zip function by s3 batch trigger
         if: contains(github.ref, 'bys3batch')
         run: |
-          cd lambda && zip "batch-doc-shredding.zip" s3mv.py triggered_by_s3batch.py
+          cd lambda && zip batch-doc-shredding.zip s3mv.py triggered_by_s3batch.py
     
       - name: Login to the AWS environment
         uses: aws-actions/configure-aws-credentials@v1
@@ -59,4 +59,4 @@ jobs:
         run: |
           aws lambda update-function-code \
             --function-name  ${{ env.FUNCTION_NAME }} \
-            --zip-file fileb://lambda/deploy.zip
+            --zip-file fileb://lambda/batch-doc-shredding.zip
