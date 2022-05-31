@@ -20,13 +20,13 @@ jobs:
         run: |
           case "${{ github.ref }}" in
             refs/heads/release/staging_bys3batch)
-              FUNCTION_NAME="${{secrets.BYBATCH_FUNCTION_NAME}}"
+              FUNCTION_NAME="stg-batch-${{secrets.FUNCTION_NAME}}"
               AWS_ACCESS_KEY_ID="${{ secrets.STG_AWS_ACCESS_KEY_ID }}"
               AWS_SECRET_ACCESS_KEY="${{ secrets.STG_AWS_SECRET_ACCESS_KEY }}"
               AWS_IAM_ROLE="${{secrets.STG_AWS_IAM_ROLE}}"
               ;;
             refs/heads/release/prod_bys3batch)
-              FUNCTION_NAME="${{secrets.BYS3BATCH_FUNCTION_NAME}}"
+              FUNCTION_NAME="prod-batch-${{secrets.FUNCTION_NAME}}"
               AWS_ACCESS_KEY_ID="${{ secrets.PROD_AWS_ACCESS_KEY_ID }}"
               AWS_SECRET_ACCESS_KEY="${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}"
               AWS_IAM_ROLE="${{secrets.PROD_AWS_IAM_ROLE}}"
@@ -43,7 +43,7 @@ jobs:
       - name: zip function by s3 batch trigger
         if: contains(github.ref, 'bys3batch')
         run: |
-          cd lambda && zip deploy.zip s3mv.py triggered_by_s3batch.py
+          cd lambda && zip "batch-doc-shredding.zip" s3mv.py triggered_by_s3batch.py
     
       - name: Login to the AWS environment
         uses: aws-actions/configure-aws-credentials@v1
